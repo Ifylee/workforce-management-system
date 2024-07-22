@@ -79,10 +79,10 @@ function viewEmployeesByManager() {
             console.log(err);
        }
 
-       const managerChoices = results.rows.map(({id, first_name, last_name}) => {
+       const managerChoices = results.rows.map(({id, first_name, last_name}) => ({
             name: `${first_name} ${last_name}`,
             value: id,
-       });
+       }));
 
        inquirer.prompt([{
             type: 'list',
@@ -114,7 +114,32 @@ function viewEmployeesByManager() {
 
 
 function addEmployee() {
+    inquirer.prompt([
+        {
+            name: "first_name",
+            message: "Enter the employee's first name"
+        },
+        {
+            name: "last_name",
+            message: "Enter the employee's last name"
 
+        }
+    ]).then(({first_name, last_name}) => {
+        pool.query("SELECT * FROM role", (err, results) => {
+
+            let roleChoices = results.rows.map(({id, title })=> ({
+                name: title,
+                value: id
+            }));
+
+            prompt([
+                type: 'list',
+                name: 'role_id',
+                message
+            ])
+
+        });
+    })
 }
 
 function removeEmployee() {
@@ -150,7 +175,7 @@ function addRole() {
 }
 
 function removeRole() {
-    
+
 }
 
 function loadMainMenu() {
@@ -173,6 +198,10 @@ function loadMainMenu() {
 
             },
             {
+                name: "Add Employee",
+                value: "ADD_EMPLOYEE",
+            },
+            {
 
                 name: "Quit",
                 value: "QUIT"
@@ -183,13 +212,14 @@ function loadMainMenu() {
 
         if(choice === "VIEW_EMPLOYEES") {
             viewEmployees()
-        }
-        else if(choice === "VIEW_EMPLOYEES_BY_DEPARTMENT") {
+        } else if(choice === "VIEW_EMPLOYEES_BY_DEPARTMENT") {
             viewEmployeesByDepartment()
-        }
-        else if(choice === "VIEW_EMPLOYEES_BY_MANAGER") {
+        } else if(choice === "VIEW_EMPLOYEES_BY_MANAGER") {
             viewEmployeesByManager();
+        } else if(choice === "ADD_EMPLOYEE") {
+            addEmployee();
         }
+
         else {
             quit();
         }   

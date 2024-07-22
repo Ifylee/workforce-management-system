@@ -49,7 +49,7 @@ function viewEmployeesByDepartment() {
 
        
     inquirer.prompt([{
-        list: 'list',
+        type: 'list',
         name: 'departmentId',
         message: 'Which department would you like to view their employees?',
         choices: departmentChoices
@@ -58,7 +58,7 @@ function viewEmployeesByDepartment() {
         employee.last_name, role.title
         FROM employee JOIN role on employee.role_id = role.id
         JOIN department on role.department_id = department.id
-        WHERE department.name = $1;`
+        WHERE department.id = $1;`
         pool.query(sqlQuery, [departmentId], (err, results) => {
             console.log("\n");
                  console.table(results.rows)
@@ -70,6 +70,87 @@ function viewEmployeesByDepartment() {
 
     });
 
+}
+
+function viewEmployeesByManager() {
+    let sqlQuery = `SELECT * FROM employee`; 
+    pool.query( sqlQuery, (err, results) => {
+        if(err) {
+            console.log(err);
+       }
+
+       const managerChoices = results.rows.map(({id, first_name, last_name}) => {
+            name: `${first_name} ${last_name}`,
+            value: id,
+       });
+
+       inquirer.prompt([{
+            type: 'list',
+            message: 'Which employee do you want to see direct report for?',
+            choices: managerChoices,
+       }])
+       .then(({managerId}) => {
+        sqlQuery = `SELECT employee.id, employee.first_name,
+        employee.last_name, department.name AS department,
+        role.title FROM employee
+        JOIN role on employee.role_id = role.id
+        JOIN department on role.department_id = department.id
+        WHEREemployee.manager_id = $1;`;
+
+        pool.query(sqlQuery, [managerId], (err, results) => {
+                console.log("\n");
+                if(results.rows.length === 0) {
+                console.log("This employee has no direct report");
+                
+                } else {
+                    console.table(results.rows);
+                }
+            
+                loadMainMenu();  
+            });
+        });
+    });
+}
+
+
+function addEmployee() {
+
+}
+
+function removeEmployee() {
+
+}
+
+function updateEmployeeRole() {
+
+}
+
+function updateEmployeeManager() {
+
+}
+
+function addDepartment() {
+
+}
+
+function removeDepartment() {
+
+}
+
+function viewUtilizedBudgetByDpartment() {
+
+}
+
+function viewRoles() {
+
+}
+
+function addRole() {
+
+}
+
+function removeRole() {
+    
 }
 
 function loadMainMenu() {
@@ -86,7 +167,11 @@ function loadMainMenu() {
                 name: "View All Employees By Department",
                 value:"VIEW_EMPLOYEES_BY_DEPARTMENT"
             },
-            // ---Enter 15 total options here ---
+            {
+                name: "View All Employees By manager",
+                value:"VIEW_EMPLOYEES_BY_MANAGER"   
+
+            },
             {
 
                 name: "Quit",
@@ -101,6 +186,9 @@ function loadMainMenu() {
         }
         else if(choice === "VIEW_EMPLOYEES_BY_DEPARTMENT") {
             viewEmployeesByDepartment()
+        }
+        else if(choice === "VIEW_EMPLOYEES_BY_MANAGER") {
+            viewEmployeesByManager();
         }
         else {
             quit();

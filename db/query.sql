@@ -10,4 +10,12 @@ SELECT employee.id, employee.first_name,
 employee.last_name, role.title
 FROM employee JOIN role on employee.role_id = role.id
 JOIN department on role.department_id = department.id
-WHERE department.name = 'Engineering';
+WHERE department.id = 1;
+
+
+SELECT employee.id, employee.first_name,
+employee.last_name, department.name AS department,
+role.title FROM employee
+JOIN role on employee.role_id = role.id
+JOIN department on role.department_id = department.id
+WHEREemployee.manager_id = 1;

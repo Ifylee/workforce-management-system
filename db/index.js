@@ -345,7 +345,11 @@ function loadMainMenu() {
                 value: "UPDATE_EMPLOYEE_ROLE",
             },
             {
-
+                
+                name: "Update Employee Manager",
+                value: "UPDATE_EMPLOYEE_MANAGER",
+            },
+            {
                 name: "Quit",
                 value: "QUIT"
             }
@@ -365,8 +369,9 @@ function loadMainMenu() {
             removeEmployee();
         } else if (choice === "UPDATE_EMPLOYEE_ROLE") {
             updateEmployeeRole();
-        }
-        else {
+        } else if (choice === "UPDATE_EMPLOYEE_MANAGER") {
+            updateEmployeeManager();
+        } else {
             quit();
         }   
     });  

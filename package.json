@@ -1,7 +1,7 @@
 {
   "name": "workforce-management-system",
   "version": "1.0.0",
-  "description": "",
+  "description": "workforce-management-system",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"

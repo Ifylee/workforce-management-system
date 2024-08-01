@@ -21,4 +21,4 @@ role.title
 FROM employee
 JOIN role on employee.role_id = role.id
 JOIN department on role.department_id = department.id
-WHEREemployee.manager_id = 1;
+WHERE employee.manager_id = 1;

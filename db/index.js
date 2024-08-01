@@ -8,11 +8,11 @@ const pool = new Pool({
     password: 'Yeshuaice!!2',
     database: 'employee_db',
     port: 5432
-},
-    console.log("Connected to the database")
-);
+});
 
-pool.connect();
+pool.on('connect', () => {
+    console.log("Connected to the database");
+});
 
 function quit(){
     console.log("Goodbye!");
@@ -95,7 +95,7 @@ function viewEmployeesByManager() {
         role.title FROM employee
         JOIN role on employee.role_id = role.id
         JOIN department on role.department_id = department.id
-        WHEREemployee.manager_id = $1;`;
+        WHERE employee.manager_id = $1;`;
 
         pool.query(sqlQuery, [managerId], (err, results) => {
                 console.log("\n");
@@ -122,128 +122,57 @@ function addEmployee() {
         {
             name: "last_name",
             message: "Enter the employee's last name"
-
         }
     ]).then(({ first_name, last_name }) => {
         pool.query("SELECT * FROM role", (err, results) => {
+            if (err) {
+                console.log(err);
+                return;
+            }
 
-            let roleChoices = results.rows.map(({id, title }) => ({
+            let roleChoices = results.rows.map(({ id, title }) => ({
                 name: title,
                 value: id
             }));
 
-           inquirer.prompt([{
-                type: 'list',
-                name: 'role_id',
-                message: "What is employee's role?",
-                choices: roleChoices
-            },
-        ]).then(({ roleId }) => {
-                pool.query("SELECT * FROM employee", (err, results) => ({
-                    name: `${first_name} ${last_name}`,
-                    value: id,
-                }));
-
-            });
-
-            inquirer.prompt([{
-                type: "list",
-                name: "managerId",
-                message: "Who is the employee's manager?",
-                choices: managerChoices 
-            }]).then(({managerId}) => {
-                let employee = {
-                    manager_id: managerId,
-                    role_id: roleId,
-                    first_name: first_name,
-                    last_name: last_name
+            pool.query("SELECT * FROM employee", (err, results) => {
+                if (err) {
+                    console.log(err);
+                    return;
                 }
 
-                let sqlQuery = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                VALUES ($1, $2, $3, $4)`;
-                pool.query(sqlQuery, [employee.first_name,employee.last_name, employee.role_id, employee.manager_id], (err, results) => {
-                    if (err) {
-                        console.log(err);
-                    }
-                    console.log(`Adding employee: ${employee.first_name} ${employee.last_name}...`);
-                    loadMainMenu();
-                });
-            });
-
-        });
-    })
-}
-
-function removeEmployee() {
-    let sqlQuery = `SELECT * FROM employee`;
-    pool.query(sqlQuery, (err, results) => {
-        if (err) {
-            console.log(err);
-        }
-
-        const employeeChoices = results.rows.map(
-          ({id, first_name, last_name}) => ({
-            name: `${first_name} ${last_name}`,
-            value: id,
-          })  
-        );
-
-        inquirer.prompt([{
-            type: "list",
-            name: "employeeId",
-            message: " Which employee would you like to remove?",
-            choices: employeeChoices,
-        },
-    ]).then(({ employeeId }) => {
-        sqlQuery = `DELETE FROM employee WHERE id = $1`;
-        pool.query(sqlQuery, [employeeId], (err, results) => {
-            console.log("\n");
-            console.log("Employee removed");
-            loadMainMenu();
-          });
-       });
-    });
-
-}
-
-function updateEmployeeRole() {
-    pool.query("SELECT * FROM employee", (err, results) => {
-        const employeeChoices = results.rows.map(({id, first_name, last_name}) => ({
-            name: `${first_name} ${last_name}`,
-            value: id,
-        }));
-
-       
-        inquirer.prompt([{
-            type: 'list',
-            name: 'employeeId',
-            message: "Which employee would you like to update?",
-            choices: employeeChoices
-        }]).then(({ emplyeeId }) => {
-            pool.query("SELECT * FROM role", (err, results) => {
-                const roleChoices = results.rows.map(({id, title}) => ({
-                    name: title,
-                    value: id,
+                let managerChoices = results.rows.map(({ id, first_name, last_name }) => ({
+                    name: `${first_name} ${last_name}`,
+                    value: id
                 }));
 
-                inquirer.prompt([{
-                    type: 'list',
-                    name: 'roleId',
-                    message: "What is the employee's new role?",
-                    choices: roleChoices
-                }]).then(({ roleId }) => {
-                    let sqlQuery = `UPDATE employee SET role_id = $1 WHERE ID = $2`;
-                    pool.query(sqlQuery, [roleId, employeeId],  (err, results) => {
-                        console.log("\n");
-                        console.log("Employee role updated");
-                        loadMainMenu(); 
+                inquirer.prompt([
+                    {
+                        type: 'list',
+                        name: 'role_id',
+                        message: "What is the employee's role?",
+                        choices: roleChoices
+                    },
+                    {
+                        type: "list",
+                        name: "managerId",
+                        message: "Who is the employee's manager?",
+                        choices: managerChoices
+                    }
+                ]).then(({ role_id, managerId }) => {
+                    let sqlQuery = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)`;
+                    pool.query(sqlQuery, [first_name, last_name, role_id, managerId], (err) => {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            console.log(`Adding employee: ${first_name} ${last_name}...`);
+                        }
+                        loadMainMenu();
                     });
                 });
             });
         });
-
     });
-
 }
 
 function updateEmployeeManager() {

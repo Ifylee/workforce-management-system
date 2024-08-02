@@ -1,7 +1,10 @@
+// Imports the inqirer module
 const inquirer = require('inquirer');
+
+// Imports the pool class from the pg module
 const {Pool} = require('pg');
 
-
+// This creates a new Pool instance to handle connections to the database
 const pool = new Pool({
     host: 'process.env.DB_HOST',
     user: 'process.env.DB_USER',
@@ -10,17 +13,21 @@ const pool = new Pool({
     port:'process.env.DB_PORT'
 });
 
+// Event listener for when the pool connects successfully to the database
 pool.on('connect', () => {
     console.log("Connected to the database");
 });
 
+// function to exit the application
 function quit(){
     console.log("Goodbye!");
     process.exit();
     
 }
 
+// function to view all employees with their details
 function viewEmployees() {
+    // Query to select employee details
     sqlQuery = `SELECT employee.id, employee.first_name,
             employee.last_name, role.title, department.name AS department,
             role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager
@@ -28,48 +35,61 @@ function viewEmployees() {
             JOIN role on employee.role_id = role.id
             JOIN department on role.department_id = department.id
             LEFT JOIN employee AS manager ON employee.manager_id = manager.id;`;
+    // Using the pool object to execute the sql query
     pool.query(sqlQuery, (err, results) => {
         if (err) {
             console.log(err);
             return;
         }
+        // print a new line for better readability
         console.log("\n");
+        // display results of the query in a table format
         console.table(results.rows)
+        // Reload the main menu to allow further user actions
         loadMainMenu();
     });
 }
 
+// Function to view employees by department
 function viewEmployeesByDepartment() {
+    // Query to select all departments
     const sqlQuery = `SELECT * FROM department`; 
     pool.query( sqlQuery, (err, results) => {
        if(err) {
             console.log(err);
        }
 
+
+        // Create an array of department choices for user selection
        const departmentChoices = results.rows.map(department => ({
             name: department.name,
             value: department.id
        }));
   
+     // Prompt the user to select a department
     inquirer.prompt([{
         type: 'list',
         name: 'departmentId',
         message: 'Which department would you like to view their employees?',
         choices: departmentChoices
     }]).then(({departmentId}) => {
+         // Query to select employees in the chosen department
         sqlQuery = `SELECT employee.id, employee.first_name,
                 employee.last_name, role.title
                 FROM employee 
                 JOIN role ON employee.role_id = role.id
                 JOIN department on role.department_id = department.id
                 WHERE department.id = $1;`
+         // Execute the query to get employee data for the selected department
         pool.query(sqlQuery, [departmentId], (err, results) => {
             if (err) {
                 console.log(err);
                 return;
             }
+            // Print a new line for better readability
             console.log("\n");
             console.table(results.rows)
+            // Reload the main menu to allow further user actions
             loadMainMenu();  
            });
 
@@ -80,18 +100,22 @@ function viewEmployeesByDepartment() {
 
 }
 
+// function for viewing employees by manager.
 function viewEmployeesByManager() {
-    const sqlQuery = `SELECT * FROM employee`; 
+    const sqlQuery = `SELECT * FROM employee`;
+    //  Execute the SQL query
     pool.query( sqlQuery, (err, results) => {
         if(err) {
             console.log(err);
        }
 
+         // Map results to an array of choices for inquirer prompt
        const managerChoices = results.rows.map(({id, first_name, last_name}) => ({
             name: `${first_name} ${last_name}`,
             value: id
        }));
 
+       // Prompt user to select a manager
        inquirer.prompt([{
             type: 'list',
             message: 'Which employee do you want to see direct report for?',
@@ -104,18 +128,23 @@ function viewEmployeesByManager() {
                 JOIN role on employee.role_id = role.id
                 JOIN department on role.department_id = department.id
                 WHERE employee.manager_id = $1;`;
+
+          // Execute the SQL query with the selected manager's ID as parameter
         pool.query(sqlQuery, [managerId], (err, results) => {
             if (err) {
                 console.log(err);
                 return;
             }
                 console.log("\n");
+                 // Check if the selected manager has any direct reports
                 if(results.rows.length === 0) {
                 console.log("This employee has no direct report");
             } else {
+                // Display the results in a table format
                 console.table(results.rows);
                 }
             
+                // Return to the main menu after displaying the results
                 loadMainMenu();  
             });
         });
@@ -124,6 +153,7 @@ function viewEmployeesByManager() {
 
 
 function addEmployee() {
+    // Prompt user for the employee's first and last name
     inquirer.prompt([
         {
             name: "first_name",
@@ -134,28 +164,33 @@ function addEmployee() {
             message: "Enter the employee's last name"
         }
     ]).then(({ first_name, last_name }) => {
+        // Query the database to get the list of roles
         pool.query("SELECT * FROM role", (err, results) => {
             if (err) {
                 console.log(err);
                 return;
             }
 
+            // Map the results to an array of choices for the roles prompt
             let roleChoices = results.rows.map(({ id, title }) => ({
                 name: title,
                 value: id
             }));
 
+              // Query the database to get the list of employees (for managers)
             pool.query("SELECT * FROM employee", (err, results) => {
                 if (err) {
                     console.log(err);
                     return;
                 }
 
+                 // Map the results to an array of choices for the managers prompt
                 let managerChoices = results.rows.map(({ id, first_name, last_name }) => ({
                     name: `${first_name} ${last_name}`,
                     value: id
                 }));
 
+                // Prompt user for the employee's role and manager
                 inquirer.prompt([
                     {
                         type: 'list',
@@ -170,7 +205,9 @@ function addEmployee() {
                         choices: managerChoices
                     }
                 ]).then(({ role_id, managerId }) => {
+                   // SQL query to insert the new employee into the database
                     const sqlQuery = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)`;
+                     // Execute the query with the provided data
                     pool.query(sqlQuery, [first_name, last_name, role_id, managerId], (err) => {
                         if (err) {
                             console.log(err);
@@ -185,17 +222,23 @@ function addEmployee() {
     });
 }
 
+// function to update empolyee's manager
 function updateEmployeeManager() {
+     // Query the database to get the list of employees
     pool.query("SELECT * FROM employee", (err, results) => {
         if (err) {
             console.log(err);
             return;
         }
+
+
+        // Map the results to an array of choices for the employees prompt
         const employeeChoices = results.rows.map(({id, first_name, last_name}) => ({
             name: `${first_name} ${last_name}`,
             value: id,
         }));
 
+            // Prompt user to select an employee whose manager needs to be updated
         inquirer.prompt([
             {
                 type: "list",
@@ -205,16 +248,20 @@ function updateEmployeeManager() {
 
             }
         ]).then(({ employeeId}) => {
+              // Query the database to get the list of possible new managers, excluding the selected employee
             pool.query("SELECT employee.id, employee.first_name, employee.last_name FROM employee WHERE employee.id != $1", [employeeId], (err, results) => {
                 if (err) {
                     console.log(err);
                     return;
                 }
+
+                // Map the results to an array of choices for the managers prompt
                 const managerChoices = results.rows.map(({id, first_name, last_name}) => ({
                     name: `${first_name} ${last_name}`,
                     value: id,
                 }));
 
+                // Prompt user to select the new manager for the employee
                 inquirer.prompt([
                     {
                         type: "list",
@@ -223,7 +270,9 @@ function updateEmployeeManager() {
                         choices: managerChoices, 
                     }
                 ]).then(({ managerId }) => {
+                     // SQL query to update the employee's manager in the database
                     let sqlQuery = `UPDATE employee SET manager_id = $1 WHERE id = $2`;
+                      // Execute the SQL query with the selected manager's ID and employee's ID as parameters
                     pool.query(sqlQuery, [managerId, employeeId],  (err) => {
                         if (err) {
                             console.log(err);
@@ -240,14 +289,18 @@ function updateEmployeeManager() {
     });
 }
 
+// function to add a new department
 function addDepartment() {
+     // Prompt user to enter the name of the new department
     inquirer.prompt([
         {
             name: "name",
             message: "Enter the name of the new department"
         }
     ]).then(({ name }) => {
+        // Query to insert the new department into the database
         const sqlQuery = `INSERT INTO department (name) VALUES ($1)`;
+        // Execute the SQL query with the provided department name
         pool.query(sqlQuery, [name], (err) => {
             if (err) {
                 console.log(err);
@@ -260,18 +313,22 @@ function addDepartment() {
 
 }
 
+// function to delete a department
 function removeDepartment() {
+    // Query the database to get the list of departments
     pool.query("SELECT * FROM department", (err, results) => {
         if (err) {
             console.log(err);
             return;
         }
 
+        // Map the results to an array of choices for the departments prompt
         const departmentChoices = results.rows.map(({ id, name }) => ({
             name: name,
             value: id
         }));
 
+         // Prompt user to select a department to delete.
         inquirer.prompt([
             {
                 type: 'list',
@@ -280,7 +337,9 @@ function removeDepartment() {
                 choices: departmentChoices
             }
         ]).then(({ departmentId }) => {
+            // Query to delete the selected department from the database
             const sqlQuery = `DELETE FROM department WHERE id = $1`;
+             // Execute the SQL query with the selected department's ID as parameter
             pool.query(sqlQuery, [departmentId], (err) => {
                 if (err) {
                     console.log(err);
@@ -294,13 +353,17 @@ function removeDepartment() {
 
 }
 
+// function to calculate the total utilized budget for each department
 function viewUtilizedBudgetByDpartment() {
+     // Query to calculate the total utilized budget (sum of salaries) for each department
     const sqlQuery = `SELECT department.name AS department, 
             SUM(role.salary) AS utilized_budget
             FROM employee 
             JOIN role ON employee.role_id = role.id
             JOIN department ON role.department_id = department.id
             GROUP BY department.name;`;
+
+      // Execute the SQL query
     pool.query(sqlQuery, (err, results) => {
         if (err) {
             console.log(err);
@@ -313,11 +376,14 @@ function viewUtilizedBudgetByDpartment() {
 
 }
 
+// function to get the list of roles
 function viewRoles() {
+     // SQL query for getting the list of roles with their department names and salaries
     const sqlQuery = `SELECT role.id, role.title, department.name AS department, role.salary
-                      FROM role
-                      JOIN department ON role.department_id = department.id;`;
-    pool.query(sqlQuery, (err, results) => {
+                FROM role
+                JOIN department ON role.department_id = department.id;`;
+         // Execute the SQL query
+        pool.query(sqlQuery, (err, results) => {
         if (err) {
             console.log(err);
             return;
@@ -328,6 +394,7 @@ function viewRoles() {
     });
 }
 
+// function to add new roles
 function addRole() {
      // Query to get all departments
      pool.query("SELECT * FROM department", (err, results) => {
@@ -410,8 +477,9 @@ function removeRole() {
     });
 }
 
-
+// function to load the main menu
 function loadMainMenu() {
+      // Prompt user with a list of options
     inquirer.prompt([{
         type: 'list',
         name: 'choice',
@@ -455,7 +523,7 @@ function loadMainMenu() {
     }]).then((answers) => {
         const { choice } = answers;
         
-        
+         // Switch case to handle user's choice
         switch (choice) {
             case "VIEW_EMPLOYEES":
                 viewEmployees();
@@ -482,14 +550,18 @@ function loadMainMenu() {
                 quit();
                 break;
             default:
+                console.log("Invalid choice");
         }   
     });  
 }
 
-
+// function to initialize the application
 function init() {
+     // Display a welcome message to the user
     console.log("Welcome to Workforce Management System");
+    // Load the main menu to present options to the user
     loadMainMenu();
 }
 
+// Call the init function to start the application
 init();

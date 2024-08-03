@@ -19,7 +19,9 @@ This application is designed to help HR professionals and managers who need to e
 Clone the repository:
 git clone https: https://github.com/Ifylee/workforce-management-system
 cd employee-management-system
-Install dependencies:
+
+## Install dependencies:
+To install dependencies:
 
 ```
 Run npm install

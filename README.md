@@ -51,4 +51,4 @@ Inquirer for creating a user-friendly CLI interface.
 pg for making PostgreSQL interaction simple.
 
 ## Video walkthrough
-[![video image](./image-1.png)](link)
+[![video image](image.png)](link)

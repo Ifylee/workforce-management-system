@@ -20,7 +20,11 @@ Clone the repository:
 git clone https: https://github.com/Ifylee/workforce-management-system
 cd employee-management-system
 Install dependencies:
+
+```
 Run npm install
+
+```
 
 ## Usage
 To start the application, run the following command:

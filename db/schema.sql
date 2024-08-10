@@ -5,7 +5,7 @@ DROP DATABASE IF EXISTS employee_db;
 CREATE DATABASE employee_db;
 
 -- connect to the database
-\c employee_db
+\c employee_db;
 
 -- Create a table named department with two columns
 CREATE TABLE department (

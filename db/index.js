@@ -1,5 +1,4 @@
 // Imports the inquirer module
-require('dotenv').config();
 const inquirer = require('inquirer');
 
 
@@ -199,6 +198,71 @@ function addEmployee() {
         });
     });
 }
+
+// Function to update employee's role
+function updateEmployeeRole() {
+    // Query to get all employees
+    pool.query("SELECT * FROM employee", (err, results) => {
+        if (err) {
+            console.log(err);
+            return;
+        }
+
+        // Create an array of employee choices for the prompt
+        const employeeChoices = results.rows.map(({ id, first_name, last_name }) => ({
+            name: `${first_name} ${last_name}`,
+            value: id
+        }));
+
+        // Prompt to select the employee whose role you want to update
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "employeeId",
+                message: "Which employee's role would you like to update?",
+                choices: employeeChoices
+            }
+        ]).then(({ employeeId }) => {
+            // Query to get all roles
+            pool.query("SELECT id, title FROM role", (err, results) => {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+
+                // Create an array of role choices for the prompt
+                const roleChoices = results.rows.map(({ id, title }) => ({
+                    name: title,
+                    value: id
+                }));
+
+                // Prompt to select the new role for the employee
+                inquirer.prompt([
+                    {
+                        type: "list",
+                        name: "roleId",
+                        message: "What is the employee's new role?",
+                        choices: roleChoices
+                    }
+                ]).then(({ roleId }) => {
+                    const sqlQuery = `UPDATE employee SET role_id = $1 WHERE id = $2`;
+
+                    // Execute the update query
+                    pool.query(sqlQuery, [roleId, employeeId], (err) => {
+                        if (err) {
+                            console.log(err);
+                            return;
+                        }
+                        console.log("\n");
+                        console.log("Employee role updated successfully");
+                        loadMainMenu(); // Call the main menu function or next step in your app
+                    });
+                });
+            });
+        });
+    });
+}
+
 
 // Function to update employee's manager
 function updateEmployeeManager() {
@@ -405,6 +469,7 @@ function loadMainMenu() {
                 { name: "View employees by manager", value: "viewEmployeesByManager" },
                 { name: "Add employee", value: "addEmployee" },
                 { name: "Update employee manager", value: "updateEmployeeManager" },
+                { name: "Update employee role", value: "updateEmployeeRole" },
                 { name: "Add department", value: "addDepartment" },
                 { name: "Remove department", value: "removeDepartment" },
                 { name: "Add role", value: "addRole" },
@@ -438,6 +503,9 @@ function loadMainMenu() {
             case "addRole":
                 addRole();
                 break;
+            case "updateEmployeeRole":
+                updateEmployeeRole();
+                break;
             case "removeRole":
                 removeRole();
                 break;
@@ -450,7 +518,7 @@ function loadMainMenu() {
 
 // function to initialize the application
 function init() {
-     // Display a welcome message to the user
+    
     console.log("Welcome to Workforce Management System");
     // Load the main menu to present options to the user
     loadMainMenu();

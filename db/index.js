@@ -221,7 +221,7 @@ function addEmployee() {
                         if (err) {
                             console.log(err);
                         } else {
-                            console.log(`Adding employee: ${first_name} ${last_name}...`);
+                            console.log(`Added employee: ${first_name} ${last_name}.`);
                         }
                         loadMainMenu();
                     });

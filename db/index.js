@@ -48,6 +48,38 @@ function viewEmployees() {
     });
 }
 
+// Function to view all departments
+function viewDepartments() {
+    const sqlQuery = `SELECT * FROM department`;
+
+    pool.query(sqlQuery, (err, results) => {
+        if (err) {
+            console.log(err);
+            return;
+        }
+        console.log("\n");
+        console.table(results.rows); 
+        loadMainMenu(); 
+    });
+}
+
+// Function to view all roles
+function viewAllRoles() {
+    const sqlQuery = `SELECT role.id, role.title, department.name AS department, role.salary
+            FROM role
+            JOIN department ON role.department_id = department.id;`;
+    
+    pool.query(sqlQuery, (err, results) => {
+        if (err) {
+            console.log(err);
+            return;
+        }
+        console.log("\n");
+        console.table(results.rows);
+        loadMainMenu();
+    });
+}
+
 // Function to view employees by department
 function viewEmployeesByDepartment() {
     const sqlQuery = `SELECT * FROM department`; 
@@ -465,8 +497,10 @@ function loadMainMenu() {
             message: "What would you like to do?",
             choices: [
                 { name: "View all employees", value: "viewEmployees" },
+                { name: "View all departments", value: "viewDepartments" },
                 { name: "View employees by department", value: "viewEmployeesByDepartment" },
                 { name: "View employees by manager", value: "viewEmployeesByManager" },
+                { name: "View all roles", value: "viewAllRoles" },
                 { name: "Add employee", value: "addEmployee" },
                 { name: "Update employee manager", value: "updateEmployeeManager" },
                 { name: "Update employee role", value: "updateEmployeeRole" },
@@ -482,11 +516,17 @@ function loadMainMenu() {
             case "viewEmployees":
                 viewEmployees();
                 break;
+            case "viewDepartments": 
+                viewDepartments();
+                break;
             case "viewEmployeesByDepartment":
                 viewEmployeesByDepartment();
                 break;
             case "viewEmployeesByManager":
                 viewEmployeesByManager();
+                break;
+            case "viewAllRoles": 
+                viewAllRoles();
                 break;
             case "addEmployee":
                 addEmployee();
